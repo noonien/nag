@@ -40,7 +40,7 @@ var commands = []command{
 	},
 	command{
 		Cmds: []string{
-			"țț", "țâțe", "țațe", "tzatze",
+			"țț", "țâțe", "țațe", "tzatze", "boobs",
 		},
 		Subs: []string{
 			"Bigtitssmalltits", "Boobies", "BreastEnvy", "EpicCleavage",
