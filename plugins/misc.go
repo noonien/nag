@@ -3,7 +3,10 @@ package plugins
 import (
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/noonien/nag/bot"
 	"github.com/sorcix/irc"
 )
@@ -14,6 +17,8 @@ type Misc struct {
 
 func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.bot = b
+
+	p.bot.HandleCmdRateLimited("cmd.digi", p.digi())
 
 	p.textCmd("cmd.macanache", "nu fi dilimache")
 
@@ -74,4 +79,114 @@ func (p *Misc) bullshit(source *irc.Prefix, target string, cmd string, args []st
 	msg := fmt.Sprintf("%s: Dragnea s-a bullshit pe tine!", args[0])
 	p.bot.Message(bot.PrivMsg(target, msg))
 	return true, nil
+}
+
+func (p *Misc) digi() bot.CmdHandler {
+	var mu sync.Mutex
+	var shows []digiShow
+
+	getShow := func() (digiShow, error) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		now := time.Now()
+
+		for {
+			for i, show := range shows {
+				if show.when.Before(now) {
+					continue
+				}
+
+				if i == 0 {
+					break
+				}
+
+				return show, nil
+			}
+
+			var err error
+			shows, err = getTodaysDigiShows()
+			if err != nil {
+				return digiShow{}, err
+			}
+		}
+	}
+
+	return func(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+		show, err := getShow()
+		if err != nil {
+			return false, err
+		}
+
+		p.bot.Message(bot.PrivMsg(target, "http://www.digi24.ro/live/digi24 | Emisiune: "+show.title))
+		return true, nil
+	}
+}
+
+type digiShow struct {
+	when  time.Time
+	title string
+}
+
+func getTodaysDigiShows() ([]digiShow, error) {
+	today := time.Now().Truncate(24 * time.Hour)
+	fmt.Println("getting shows")
+
+	yesterdayShows, err := getDigiShows(today.Add(-24 * time.Hour))
+	if err != nil {
+		return nil, err
+	}
+
+	todayShows, err := getDigiShows(today)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(yesterdayShows, todayShows...), nil
+}
+
+func getDigiShows(day time.Time) ([]digiShow, error) {
+	day = day.Truncate(24 * time.Hour)
+	today := day.Format("02/01/2006")
+
+	url := fmt.Sprintf("http://www.rcs-rds.ro/asistenta/program-tv?cid=904&data=%d", day.Unix())
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var shows []digiShow
+	var isTomorrow bool
+	doc.Find("table.vtable tr").Each(func(i int, s *goquery.Selection) {
+		tds := s.Find("td")
+
+		whenText := strings.TrimSpace(tds.Eq(0).Text())
+		var titleParts []string
+		tds.Eq(1).Contents().Each(func(i int, s *goquery.Selection) {
+			if goquery.NodeName(s) != "#text" {
+				return
+			}
+
+			titleParts = append(titleParts, strings.TrimSpace(s.Text()))
+		})
+
+		title := strings.Join(titleParts, " ")
+		title = strings.Replace(title, "Cu", "cu", 1)
+		title = strings.Replace(title, " si", ",", -1)
+
+		when, _ := time.Parse("02/01/2006 15:04", today+" "+whenText)
+
+		if isTomorrow || (len(shows) > 0 && shows[len(shows)-1].when.After(when)) {
+			isTomorrow = true
+			when = when.Add(24 * time.Hour)
+		}
+
+		shows = append(shows, digiShow{when: when, title: title})
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return shows, nil
 }
