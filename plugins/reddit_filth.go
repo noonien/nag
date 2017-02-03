@@ -58,6 +58,18 @@ var commands = []command{
 		},
 		Check: checkIsImage,
 	},
+	command{
+		Cmds: []string{
+			"lips", "buze",
+		},
+		Subs: []string{
+			"lips", "lipsthatgrip",
+		},
+		Ce: []string{
+			"buze", "lips",
+		},
+		Check: checkIsImage,
+	},
 }
 
 type RedditFilth struct {
@@ -112,11 +124,12 @@ func (p *RedditFilth) newMizerie(subs []string, check func(*reddit.Post) bool) *
 					continue
 				}
 
+				sub := subs[rand.Intn(len(subs))]
 				for {
-					sub := subs[rand.Intn(len(subs))]
 					post, err := p.Lurker.Thread("/r/" + sub + "/random")
 					if err != nil {
 						log.Printf("error while getting random post from %s: %v\n", sub, err)
+						sub = subs[rand.Intn(len(subs))]
 						continue
 					}
 
