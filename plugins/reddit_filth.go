@@ -34,6 +34,7 @@ func (p *RedditFilth) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	for i := range mizerii {
 		mizerii[i].register(p)
 	}
+	p.bot.HandleCmdRateLimited("cmd.porn", p.roulette)
 
 	return &bot.PluginInfo{
 		Name:        "RedditFilth",
@@ -46,6 +47,12 @@ func (p *RedditFilth) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 func (p *RedditFilth) Unload() error {
 	close(p.close)
 	return nil
+}
+
+func (p *RedditFilth) roulette(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+	mizerie := mizerii[rand.Intn(len(mizerii))]
+	cmd = mizerie.Cmds[0]
+	return p.bot.Event("cmd."+cmd, source, target, cmd, args)
 }
 
 var imageHosts = []string{"imgur.com", "gfycat.com", "giphy.com", "i.redditmedia.com", "i.redd.it", "media.tumblr.com"}
