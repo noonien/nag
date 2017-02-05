@@ -9,68 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/noonien/nag/bot"
 	"github.com/sorcix/irc"
 	"github.com/turnage/graw/reddit"
 )
-
-type command struct {
-	Cmds  []string
-	Subs  []string
-	Ce    []string
-	Check func(*reddit.Post) bool
-}
-
-var commands = []command{
-	command{
-		Cmds: []string{
-			"buci", "booci", "cur",
-		},
-		Subs: []string{
-			"AssOnTheGlass", "BoltedOnBooty", "ButtsAndBareFeet", "Cheeking",
-			"HighResASS", "LoveToWatchYouLeave", "NoTorso", "SpreadEm",
-			"TheUnderbun", "Top_Tier_Asses", "Tushy", "Underbun", "ass",
-			"assgifs", "booty", "booty_gifs", "datass", "datbuttfromthefront",
-			"twerking",
-		},
-		Ce: []string{
-			"buci", "booci", "cur", "curuletz", "funduletz",
-		},
-		Check: checkIsImage,
-	},
-	command{
-		Cmds: []string{
-			"țț", "țâțe", "țațe", "tzatze", "boobs",
-		},
-		Subs: []string{
-			"Bigtitssmalltits", "Boobies", "BreastEnvy", "EpicCleavage",
-			"JustOneBoob", "OneInOneOut", "PM_ME_YOUR_TITS_GIRL",
-			"PerfectTits", "Perky", "Rush_Boobs", "Saggy", "SloMoBoobs",
-			"TheHangingBoobs", "TheUnderboob", "Titsgalore", "TittyDrop",
-			"bananatits", "boobbounce", "boobgifs", "boobkarma", "boobland",
-			"boobs", "breastplay", "cleavage", "feelthemup", "handbra",
-			"hanging", "homegrowntits", "knockers", "naturaltitties",
-			"sideboob", "tits", "titsagainstglass", "titties_n_kitties",
-			"torpedotits", "underboob",
-		},
-		Ce: []string{
-			"țț", "țâțe", "țațe", "tzatze",
-		},
-		Check: checkIsImage,
-	},
-	command{
-		Cmds: []string{
-			"lips", "buze",
-		},
-		Subs: []string{
-			"lips", "lipsthatgrip",
-		},
-		Ce: []string{
-			"buze", "lips",
-		},
-		Check: checkIsImage,
-	},
-}
 
 type RedditFilth struct {
 	PreloadCount int
@@ -88,8 +31,8 @@ func (p *RedditFilth) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 		p.PreloadCount = 10
 	}
 
-	for _, cmd := range commands {
-		p.registerFilth(cmd.Cmds, cmd.Subs, cmd.Ce, cmd.Check)
+	for i := range mizerii {
+		mizerii[i].register(p)
 	}
 
 	return &bot.PluginInfo{
@@ -102,81 +45,6 @@ func (p *RedditFilth) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 
 func (p *RedditFilth) Unload() error {
 	close(p.close)
-	return nil
-}
-
-func (p *RedditFilth) newMizerie(subs []string, check func(*reddit.Post) bool) *mizerie {
-	m := mizerie{
-		Posts: make([]*reddit.Post, 0, p.PreloadCount),
-		close: p.close,
-	}
-
-	go func() {
-		for {
-			select {
-			case <-m.close:
-				return
-			case <-time.After(2 * time.Second):
-				m.mu.Lock()
-				full := len(m.Posts) == cap(m.Posts)
-				m.mu.Unlock()
-				if full {
-					continue
-				}
-
-				sub := subs[rand.Intn(len(subs))]
-				for {
-					post, err := p.Lurker.Thread("/r/" + sub + "/random")
-					if err != nil {
-						log.Printf("error while getting random post from %s: %v\n", sub, err)
-						sub = subs[rand.Intn(len(subs))]
-						continue
-					}
-
-					if check != nil && !check(post) {
-						continue
-					}
-
-					m.mu.Lock()
-					m.Posts = append(m.Posts, post)
-					m.mu.Unlock()
-					break
-				}
-			}
-		}
-	}()
-
-	return &m
-}
-
-type mizerie struct {
-	Posts []*reddit.Post
-
-	mu    sync.Mutex
-	close chan bool
-}
-
-func (m *mizerie) Get() *reddit.Post {
-	for i := 0; i < 20; i++ {
-		m.mu.Lock()
-		var post *reddit.Post
-		if len(m.Posts) > 0 {
-			post = m.Posts[len(m.Posts)-1]
-			m.Posts = m.Posts[:len(m.Posts)-1]
-		}
-		m.mu.Unlock()
-
-		if post != nil {
-			return post
-		}
-
-		select {
-		case <-m.close:
-			return nil
-		case <-time.After(time.Second):
-		}
-	}
-
 	return nil
 }
 
@@ -201,16 +69,87 @@ func chooseRandStr(opt []string) string {
 	return opt[rand.Intn(len(opt))]
 }
 
-func (p *RedditFilth) registerFilth(cmds, subs, ce []string, check func(*reddit.Post) bool) {
-	miz := p.newMizerie(subs, check)
+type mizerie struct {
+	Cmds          []string
+	Subs          []string
+	RedditListTag string
+	Ce            []string
+	Check         func(*reddit.Post) bool
 
-	handler := func(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
-		post := miz.Get()
-		if post == nil {
-			return true, nil
+	posts []*reddit.Post
+	mu    sync.Mutex
+	close chan bool
+}
+
+var mizerii = []mizerie{
+	mizerie{
+		Cmds:  []string{"nsfw"},
+		Subs:  []string{"nsfw"},
+		Ce:    []string{"nsfw", "imagini de ascuns cand vine sefu"},
+		Check: checkIsImage,
+	},
+	mizerie{
+		Cmds:          []string{"buci", "booci", "cur"},
+		RedditListTag: "ass",
+		Ce:            []string{"buci", "booci", "cur", "curuletz", "funduletz"},
+		Check:         checkIsImage,
+	},
+	mizerie{
+		Cmds:          []string{"țț", "țâțe", "țațe", "tzatze", "boobs"},
+		RedditListTag: "tits",
+		Ce:            []string{"țț", "țâțe", "țațe", "tzatze"},
+		Check:         checkIsImage,
+	},
+}
+
+func (m *mizerie) get() *reddit.Post {
+	for i := 0; i < 5; i++ {
+		m.mu.Lock()
+		var post *reddit.Post
+		if len(m.posts) > 0 {
+			post = m.posts[len(m.posts)-1]
+			m.posts = m.posts[:len(m.posts)-1]
+		}
+		m.mu.Unlock()
+
+		if post != nil {
+			return post
 		}
 
-		niste := chooseRandStr(ce)
+		select {
+		case <-m.close:
+			return nil
+		case <-time.After(time.Second):
+		}
+	}
+
+	return nil
+}
+
+func (m *mizerie) register(plug *RedditFilth) {
+	m.posts = make([]*reddit.Post, 0, plug.PreloadCount)
+	m.close = plug.close
+
+	go func() {
+		if len(m.RedditListTag) > 0 {
+			m.getSubredditList()
+		}
+
+		if len(m.Subs) == 0 {
+			return
+		}
+
+		m.preload(plug.Lurker)
+	}()
+
+	handler := func(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+		niste := chooseRandStr(m.Ce)
+
+		post := m.get()
+		if post == nil {
+			plug.bot.Message(bot.PrivMsg(target, fmt.Sprintf("%s: n-am %s inca boss", source.Name, niste)))
+			return true, nil
+		}
 
 		var msg string
 		if len(args) > 0 {
@@ -219,12 +158,65 @@ func (p *RedditFilth) registerFilth(cmds, subs, ce []string, check func(*reddit.
 			msg = fmt.Sprintf("%s, ia niste %s: %s NSFW (https://redd.it/%s)", source.Name, niste, post.URL, post.ID)
 		}
 
-		p.bot.Message(bot.PrivMsg(target, msg))
+		plug.bot.Message(bot.PrivMsg(target, msg))
 		return true, nil
 
 	}
 
-	for _, cmd := range cmds {
-		p.bot.HandleCmdRateLimited("cmd."+cmd, handler)
+	for _, cmd := range m.Cmds {
+		plug.bot.HandleCmdRateLimited("cmd."+cmd, handler)
+	}
+}
+
+func (m *mizerie) getSubredditList() {
+	url := "http://redditlist.com/nsfw/category/" + m.RedditListTag
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		log.Println("failed to get reddit list subreddits for ", m.RedditListTag)
+		return
+	}
+
+	var subs []string
+	doc.Find(".result-item-slug a").Each(func(i int, s *goquery.Selection) {
+		sub := strings.TrimPrefix(s.Text(), "/r/")
+		subs = append(subs, sub)
+	})
+
+	m.Subs = append(m.Subs, subs...)
+}
+
+func (m *mizerie) preload(lurk reddit.Lurker) {
+	for {
+		select {
+		case <-m.close:
+			return
+		case <-time.After(2 * time.Second):
+			m.mu.Lock()
+			full := len(m.posts) == cap(m.posts)
+			m.mu.Unlock()
+			if full {
+				continue
+			}
+
+			sub := m.Subs[rand.Intn(len(m.Subs))]
+			for {
+				post, err := lurk.Thread("/r/" + sub + "/random")
+				if err != nil {
+					log.Printf("error while getting random post from %s: %v\n", sub, err)
+					sub = m.Subs[rand.Intn(len(m.Subs))]
+					continue
+				}
+
+				if m.Check != nil && !m.Check(post) {
+					continue
+				}
+
+				m.mu.Lock()
+				m.posts = append(m.posts, post)
+				m.mu.Unlock()
+				break
+			}
+
+		}
 	}
 }
