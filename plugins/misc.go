@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -20,9 +21,10 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 
 	p.bot.HandleCmdRateLimited("cmd.digi", p.digi())
 
-	p.textCmd("cmd.macanache", "nu fi dilimache")
+	p.textCmd("cmd.macanache", []string{"nu fi dilimache"})
+	p.textCmd("cmd.satraiesti", []string{"satz traiasca familia boss", "sa traiesti boss"})
 
-	p.textCmd("cmd.next", "Altă întrebare!")
+	p.textCmd("cmd.next", []string{"Altă întrebare!"})
 	p.textReply("irc.privmsg", "Altă întrebare!", func(line string) bool {
 		line = strings.ToLower(line)
 		return strings.HasSuffix(line, ", next") || strings.HasSuffix(line, " next!")
@@ -43,8 +45,18 @@ func (p *Misc) Unload() error {
 	return nil
 }
 
-func (p *Misc) textCmd(cmd, text string) {
+func (p *Misc) textCmd(cmd string, texts []string) {
+	if len(texts) == 0 {
+		return
+	}
+
 	handler := func(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+		text := texts[rand.Intn(len(texts))]
+
+		if len(args) > 0 {
+			text = args[0] + ": " + text
+		}
+
 		p.bot.Message(bot.PrivMsg(target, text))
 
 		return true, nil
