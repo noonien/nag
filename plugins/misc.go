@@ -25,8 +25,9 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.textCmd("cmd.satraiesti", []string{"satz traiasca familia boss", "sa traiesti boss"})
 	p.textCmd("cmd.noroc", []string{"hai noroc"})
 
-	p.textCmd("cmd.next", []string{"Altă întrebare!"})
-	p.textReply("irc.privmsg", "Altă întrebare!", func(line string) bool {
+	ai := "Altă întrebare! (https://soundcloud.com/armies/alta-intrebare-armies-edit)"
+	p.textCmd("cmd.next", []string{ai})
+	p.textReply("irc.privmsg", ai, func(line string) bool {
 		line = strings.ToLower(line)
 		return strings.HasSuffix(line, ", next") || strings.HasSuffix(line, " next!")
 	})
