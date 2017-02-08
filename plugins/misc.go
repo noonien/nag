@@ -25,6 +25,9 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.textCmd("cmd.satraiesti", []string{"satz traiasca familia boss", "sa traiesti boss"})
 	p.textCmd("cmd.noroc", []string{"hai noroc"})
 
+	p.bot.HandleCmdRateLimited("cmd.ba", p.ba)
+	p.bot.HandleCmdRateLimited("cmd.bă", p.ba)
+
 	ai := "Altă întrebare! (https://soundcloud.com/armies/alta-intrebare-armies-edit)"
 	p.textCmd("cmd.next", []string{ai})
 	p.textReply("irc.privmsg", ai, func(line string) bool {
@@ -203,4 +206,38 @@ func getDigiShows(day time.Time) ([]digiShow, error) {
 	}
 
 	return shows, nil
+}
+
+func (p *Misc) ba(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+	if len(args) == 0 {
+		return true, nil
+	}
+
+	perms, err := p.bot.Auth(source)
+	if err != nil {
+		return false, err
+	}
+
+	if perms == nil || !perms.Can("annoy") {
+		return true, nil
+	}
+
+	lines := []string{
+		"%s",
+		"%s!",
+		"ba %s",
+		"%s %[1]s %[1]s %[1]s %[1]s",
+		"%s %[1]s %[1]s %[1]s",
+		"%s anplm",
+	}
+
+	times := rand.Intn(3) + 3
+	for i := 0; i < times; i++ {
+		line := lines[rand.Intn(len(lines))]
+		msg := fmt.Sprintf(line, args[0])
+		p.bot.Message(bot.PrivMsg(target, msg))
+
+		time.Sleep(time.Duration(rand.Intn(300)+300) * time.Millisecond)
+	}
+	return true, nil
 }
