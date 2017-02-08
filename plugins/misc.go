@@ -35,6 +35,11 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 		return strings.HasSuffix(line, ", next") || strings.HasSuffix(line, " next!")
 	})
 
+	p.textReply("irc.privmsg", "mai zi", func(line string) bool {
+		line = strings.ToLower(line)
+		return strings.HasSuffix(line, "fascinant")
+	})
+
 	p.bot.HandleCmdRateLimited("cmd.bullshit", p.bullshit)
 	p.bot.HandleCmdRateLimited("cmd.bs", p.bullshit)
 
