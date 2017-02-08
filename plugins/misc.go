@@ -23,6 +23,7 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 
 	p.textCmd("cmd.macanache", []string{"nu fi dilimache"})
 	p.textCmd("cmd.satraiesti", []string{"satz traiasca familia boss", "sa traiesti boss"})
+	p.textCmd("cmd.noroc", []string{"hai noroc"})
 
 	p.textCmd("cmd.next", []string{"Altă întrebare!"})
 	p.textReply("irc.privmsg", "Altă întrebare!", func(line string) bool {
