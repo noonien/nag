@@ -14,6 +14,8 @@ import (
 
 type Misc struct {
 	bot *bot.Bot
+
+	fuckers map[string]string
 }
 
 func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
@@ -40,8 +42,14 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 		return strings.HasSuffix(line, "fascinant")
 	})
 
+	p.bot.HandleIRC("irc.invite", p.invite)
+	p.bot.HandleIRC("irc.kick", p.kick)
+	p.bot.HandleIRC("irc.join", p.join)
+
 	p.bot.HandleCmdRateLimited("cmd.bullshit", p.bullshit)
 	p.bot.HandleCmdRateLimited("cmd.bs", p.bullshit)
+
+	p.fuckers = make(map[string]string)
 
 	return &bot.PluginInfo{
 		Name:        "Misc",
@@ -152,7 +160,6 @@ type digiShow struct {
 
 func getTodaysDigiShows() ([]digiShow, error) {
 	today := time.Now().Truncate(24 * time.Hour)
-	fmt.Println("getting shows")
 
 	yesterdayShows, err := getDigiShows(today.Add(-24 * time.Hour))
 	if err != nil {
@@ -245,4 +252,56 @@ func (p *Misc) ba(source *irc.Prefix, target string, cmd string, args []string) 
 		time.Sleep(time.Duration(rand.Intn(300)+300) * time.Millisecond)
 	}
 	return true, nil
+}
+
+func (p *Misc) invite(msg *irc.Message) (bool, error) {
+	perms, err := p.bot.Auth(msg.Prefix)
+	if err != nil {
+		return false, err
+	}
+
+	if perms == nil || !perms.Can("invite") {
+		return true, nil
+	}
+
+	channel := msg.Trailing
+	err = p.bot.Message(bot.Join(channel))
+	return true, nil
+}
+
+func (p *Misc) kick(msg *irc.Message) (bool, error) {
+	channel, who := msg.Params[0], msg.Params[1]
+	if who != p.bot.Config.Nickname {
+		return false, nil
+	}
+
+	fucker := msg.Prefix.Name
+
+	if fucker == "ChanServ" {
+		parts := strings.Fields(msg.Trailing)
+		fucker = strings.Trim(parts[len(parts)-1], "()")
+	}
+
+	p.fuckers[channel] = fucker
+
+	return false, nil
+}
+
+func (p *Misc) join(msg *irc.Message) (bool, error) {
+	if msg.Prefix.Name != p.bot.Config.Nickname {
+		return false, nil
+	}
+
+	channel := msg.Trailing
+
+	fucker, ok := p.fuckers[channel]
+	if !ok {
+		return false, nil
+	}
+
+	delete(p.fuckers, fucker)
+
+	welcome := fmt.Sprintf("%s: _)_", fucker)
+	p.bot.Message(bot.PrivMsg(channel, welcome))
+	return false, nil
 }
