@@ -13,6 +13,14 @@ import (
 	"github.com/turnage/graw/reddit"
 )
 
+var noobs = map[string][]string{
+	"user/nuunien":       []string{"all"},
+	"fish.programmer":    []string{"annoy", "invite"},
+	"user/victorrrrrr":   []string{"annoy", "invite"},
+	"user/jupiter-crash": []string{"annoy", "invite"},
+	"sch":                []string{"annoy"},
+}
+
 func main() {
 	conf := bot.Config{
 		Nickname:  "naagien",
@@ -21,8 +29,19 @@ func main() {
 	}
 
 	auth := bot.AuthFunc(func(mask *irc.Prefix) (bot.Permissions, error) {
+		perms, ok := noobs[mask.Host]
+		if !ok {
+			return nil, nil
+		}
+
 		return bot.PermissionsFunc(func(name string) bool {
-			return mask.Host == "user/nuunien"
+			for _, perm := range perms {
+				if perm == name || perm == "all" {
+					return true
+				}
+
+			}
+			return false
 		}), nil
 	})
 
