@@ -21,7 +21,7 @@ type Misc struct {
 func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.bot = b
 
-	p.bot.HandleCmd("cmd.burp", p.burp)
+	p.bot.HandleCmd("cmd.burp", p.burp())
 
 	p.bot.HandleCmdRateLimited("cmd.digi", p.digi())
 
@@ -308,8 +308,23 @@ func (p *Misc) join(msg *irc.Message) (bool, error) {
 	return false, nil
 }
 
-func (p *Misc) burp(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
-	time.Sleep(time.Duration(180+rand.Intn(420)) * time.Second)
-	p.bot.Message(bot.PrivMsg("ChanServ", fmt.Sprintf("kick %s %s", target, source.Name)))
-	return true, nil
+func (p *Misc) burp() bot.CmdHandler {
+	burps := map[string]bool{}
+
+	return func(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+		_, ok := burps[source.Name]
+		if ok {
+			return true, nil
+		}
+
+		burps[source.Name] = true
+		go func() {
+			time.Sleep(time.Duration(180+rand.Intn(420)) * time.Second)
+			delete(burps, source.Name)
+
+			p.bot.Message(bot.PrivMsg("ChanServ", fmt.Sprintf("kick %s %s", target, source.Name)))
+		}()
+
+		return true, nil
+	}
 }
