@@ -15,9 +15,9 @@ import (
 
 var noobs = map[string][]string{
 	"user/nuunien":       []string{"all"},
-	"fish.programmer":    []string{"annoy", "invite"},
-	"user/victorrrrrr":   []string{"annoy", "invite"},
-	"user/jupiter-crash": []string{"annoy", "invite"},
+	"fish.programmer":    []string{"annoy", "invite", "opcmds"},
+	"user/victorrrrrr":   []string{"annoy", "invite", "opcmds"},
+	"user/jupiter-crash": []string{"annoy", "invite", "opcmds"},
 	"sch":                []string{"annoy"},
 }
 
