@@ -152,7 +152,7 @@ var mizerii = []mizerie{
 	mizerie{
 		Cmds: []string{"redhead", "roscate", "roșcate", "vulpițe"},
 		Subs: []string{
-			"readheads", "ginger",
+			"redheads", "ginger", "redhead",
 		},
 		Ce:    []string{"roșcată", "vulpiță"},
 		Check: checkIsImage,
