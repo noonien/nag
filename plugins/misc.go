@@ -28,6 +28,11 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.textCmd("cmd.macanache", []string{"nu fi dilimache"})
 	p.textCmd("cmd.satraiesti", []string{"satz traiasca familia boss", "sa traiesti boss"})
 	p.textCmd("cmd.noroc", []string{"hai noroc"})
+	p.textCmd("cmd.birzan", []string{"hurr durr sebyk suge"})
+	p.textCmd("cmd.plp", []string{"fac laba"})
+	p.textCmd("cmd.gabem", []string{"am suflet dar nu am suflet unde mi-e sufletu"})
+	p.textCmd("cmd.florin", []string{"<?php echo 'haha fraerri chiar ma cred ca fac python';"})
+	p.textCmd("cmd.jupi", []string{"hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii _rs"})
 
 	p.bot.HandleCmdRateLimited("cmd.ba", p.ba)
 	p.bot.HandleCmdRateLimited("cmd.bă", p.ba)
