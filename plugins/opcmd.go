@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"fmt"
+
 	"github.com/noonien/nag/bot"
 	"github.com/sorcix/irc"
 )
@@ -11,7 +13,8 @@ type OPCmd struct {
 
 func (p *OPCmd) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.bot = b
-	b.HandleCmd("cmd.bafta", p.bafta)
+	b.HandleCmd("cmd.kb", p.kickban)
+	b.HandleCmd("cmd.bafta", p.kickban)
 
 	return &bot.PluginInfo{
 		Name:        "OPCmd",
@@ -25,7 +28,7 @@ func (p *OPCmd) Unload() error {
 	return nil
 }
 
-func (p *OPCmd) bafta(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
+func (p *OPCmd) kickban(source *irc.Prefix, target string, cmd string, args []string) (bool, error) {
 	if len(args) != 1 {
 		return true, nil
 	}
@@ -40,7 +43,6 @@ func (p *OPCmd) bafta(source *irc.Prefix, target string, cmd string, args []stri
 	}
 
 	whom := args[0]
-	p.bot.Message(bot.Ban(target, whom+"!*"))
-	p.bot.Message(bot.Kick(target, whom))
+	p.bot.Message(bot.PrivMsg("ChanServ", fmt.Sprintf("ban %s %s", target, whom)))
 	return true, nil
 }
