@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"github.com/noonien/nag/bot"
 	"github.com/sorcix/irc"
 )
+
+var decatRE = regexp.MustCompile(`\bmai\s+\w+\s+ca\b`)
 
 type Misc struct {
 	bot *bot.Bot
@@ -47,6 +50,11 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 	p.textReply("irc.privmsg", "mai zi", func(line string) bool {
 		line = strings.ToLower(line)
 		return strings.HasSuffix(line, "fascinant")
+	})
+
+	p.textReply("irc.privmsg", "*decat", func(line string) bool {
+		line = strings.ToLower(line)
+		return decatRE.MatchString(line)
 	})
 
 	p.bot.HandleIRC("irc.invite", p.invite)
