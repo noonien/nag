@@ -57,6 +57,11 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 		return decatRE.MatchString(line)
 	})
 
+	p.textReply("irc.privmsg", "*voiam", func(line string) bool {
+		line = strings.ToLower(line)
+		return strings.Contains(line, "vroiam")
+	})
+
 	p.bot.HandleIRC("irc.invite", p.invite)
 	p.bot.HandleIRC("irc.kick", p.kick)
 	p.bot.HandleIRC("irc.join", p.join)
