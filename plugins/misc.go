@@ -13,7 +13,7 @@ import (
 	"github.com/sorcix/irc"
 )
 
-var decatRE = regexp.MustCompile(`\bmai\s+\w+\s+ca\b`)
+// var decatRE = regexp.MustCompile(`\bmai\s+\w+\s+ca\b`)
 
 type Misc struct {
 	bot *bot.Bot
