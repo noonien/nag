@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"math/rand"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -12,8 +11,6 @@ import (
 	"github.com/noonien/nag/bot"
 	"github.com/sorcix/irc"
 )
-
-// var decatRE = regexp.MustCompile(`\bmai\s+\w+\s+ca\b`)
 
 type Misc struct {
 	bot *bot.Bot
@@ -51,12 +48,6 @@ func (p *Misc) Load(b *bot.Bot) (*bot.PluginInfo, error) {
 		line = strings.ToLower(line)
 		return strings.HasSuffix(line, "fascinant")
 	})
-
-	// nazimod
-	// p.textReply("irc.privmsg", "*decat", func(line string) bool {
-	// 	line = strings.ToLower(line)
-	// 	return decatRE.MatchString(line)
-	// })
 
 	p.textReply("irc.privmsg", "*voiam", func(line string) bool {
 		line = strings.ToLower(line)
